@@ -11,6 +11,7 @@ import net.runelite.api.GameObject;
 import net.runelite.api.GameState;
 import net.runelite.api.events.GameObjectDespawned;
 import net.runelite.api.events.GameStateChanged;
+import net.runelite.client.RuneLite;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.plugins.Plugin;
@@ -33,6 +34,9 @@ public class FallenTreePlugin extends Plugin
 	private FallenTreeConfig config;
 
 	private Clip soundClip;
+	private static final File SOUND_DIRECTORY = new File(RuneLite.RUNELITE_DIR, "fallen-tree-sounds");
+	private static final File SOUND_FILE = new File(SOUND_DIRECTORY, "Jerma_noise.wav");
+
 
 	private static final int[] TREE_IDS = {
 			1276, 1278, 1277, 1280, 3879, 3881, 3882, 3883, 36677, 36672, 36674, 40750, 40752, 1330, 1331, 1332,//logs
@@ -77,8 +81,13 @@ public class FallenTreePlugin extends Plugin
 
 	private void loadSound(){
 		try{
-			File soundFile = new File(System.getProperty("user.home") + "/.runelite/fallen-tree-sounds/Jerma_noise.wav");
-			AudioInputStream audioInputStream = AudioSystem.getAudioInputStream(soundFile);
+			if(soundClip != null)
+				soundClip.close();
+
+			if(soundClip != null && soundClip.isOpen())
+				soundClip.close();
+
+			AudioInputStream audioInputStream = AudioSystem.getAudioInputStream(SOUND_FILE);
 			soundClip = AudioSystem.getClip();
 			soundClip.open(audioInputStream);
 		}
@@ -121,22 +130,20 @@ public class FallenTreePlugin extends Plugin
 	}
 
 	private void checkForSoundFolder(){
-		File soundDirectory = new File(System.getProperty("user.home") + "/.runelite/fallen-tree-sounds");
-		File soundFile = new File(soundDirectory, "Jerma_noise.wav");
 
-		if(!soundDirectory.exists()){
-			soundDirectory.mkdir();
+		if(!SOUND_DIRECTORY.exists()){
+			SOUND_DIRECTORY.mkdir();
 		}
 
-		if(!soundFile.exists()){
+		if(!SOUND_FILE.exists()){
 			try(InputStream in = getClass().getResourceAsStream("/Jerma_noise.wav");
-				OutputStream out = new FileOutputStream(soundFile)){
+				OutputStream out = new FileOutputStream(SOUND_FILE)){
 				byte[] buffer = new byte[1024];
 				int bytesRead;
 				while ((bytesRead = in.read(buffer)) != -1){
 					out.write(buffer, 0, bytesRead);
 				}
-				log.info(("Copied Jerma sound file to: " + soundFile.getAbsolutePath()));
+				log.info(("Copied Jerma sound file to: " + SOUND_FILE.getAbsolutePath()));
 			}
 			catch (IOException e){
 				log.error("Jerma has escape containment. ", e );
